@@ -15,7 +15,11 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-$hostsPath = Join-Path $env:SystemRoot 'System32\drivers\etc\hosts'
+$hostsPath = if ($env:SystemRoot) {
+    Join-Path $env:SystemRoot 'System32\drivers\etc\hosts'
+} else {
+    '/etc/hosts'
+}
 $beginMarker = '# >>> dsh: block DeepSeek endpoints >>>'
 $endMarker = '# <<< dsh: block DeepSeek endpoints <<<'
 

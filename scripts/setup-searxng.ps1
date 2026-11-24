@@ -20,10 +20,24 @@ param(
 
     [string]$Image,
 
-    [string]$ConfigDir = (Join-Path $env:USERPROFILE 'searxng')
+    [string]$ConfigDir
 )
 
 $ErrorActionPreference = 'Stop'
+
+if (-not $ConfigDir) {
+    $homeDirectory = if ($env:USERPROFILE) {
+        $env:USERPROFILE
+    } elseif ($HOME) {
+        $HOME
+    } elseif ($SelfTest) {
+        [IO.Path]::GetTempPath()
+    }
+    if (-not $homeDirectory) {
+        throw 'Could not determine a home directory for the SearXNG configuration.'
+    }
+    $ConfigDir = Join-Path $homeDirectory 'searxng'
+}
 
 $containerName = 'dsh-searxng'
 $settingsPath = Join-Path $ConfigDir 'settings.yml'
