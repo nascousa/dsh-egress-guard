@@ -9,6 +9,22 @@ Installing it applies one patch layer to the profile. Nothing is patched in the
 DSH installation itself, so `git pull` in a source checkout never conflicts, and
 removing the bundle restores the shipped behaviour exactly.
 
+## Who this is for
+
+This bundle is intended for people who want to use DSH while keeping prompts,
+tool arguments, session events, and telemetry away from DeepSeek-operated
+infrastructure or from a provider/jurisdiction whose data-access policy they do
+not accept. That includes users concerned about possible access or disclosure
+to the Chinese government. The project does **not** assert that DeepSeek or any
+government actually receives DSH data; it reduces a documented network path and
+provides an auditable privacy control.
+
+The complete privacy boundary still depends on the model and search provider
+chosen after installation. Blocking DeepSeek does not protect data sent to a
+substitute provider, and a Zero Data Retention (ZDR) promise is not immunity
+from legal process. Review the provider's contract, retention policy, training
+policy, subprocessors, data region, and request/tool exceptions.
+
 Version 0.1.2 expands the OS-level sinkhole to every DeepSeek host currently
 identified in the audited DSH runtime, including account notifications, Desktop
 updates, and public documentation links. It covers both the `web` and Electron
@@ -16,10 +32,10 @@ updates, and public documentation links. It covers both the `web` and Electron
 dependency, reuses the resolved local SearXNG image, and verifies effective
 configuration plus DNS sinkholes.
 
-Version 0.1.8 sanitizes public examples and completes the
-Dyson-sphere-inspired containment icon: a local
-data core is fully enclosed by a polygonal shell, without orbital rings or a
-status dot, and a larger shield badge reinforces the lower-right edge.
+Version 0.1.9 adds an explicit end-to-end privacy model: it identifies users
+concerned about DeepSeek/jurisdictional data paths, separates route blocking
+from provider privacy, and documents self-hosting and published ZDR options. It
+retains the Dyson-sphere icon and previously sanitized public examples.
 
 ## What it changes
 
@@ -39,9 +55,11 @@ status dot, and a larger shield badge reinforces the lower-right edge.
 **No capability is given up**, because none of the above is the only way to do
 its job:
 
-- **DeepSeek models** are still available through providers that serve the same
-  weights — DeepInfra, Relace, OpenRouter — configured as `llm-pi-ai`
-  providers. Only DeepSeek's *own* API routes are unmounted.
+- **Compatible model weights** can be configured through alternate
+  `llm-pi-ai` providers. Only DeepSeek's *own* API routes are unmounted.
+  Prompts then go to the substitute provider, so use the provider-selection
+  requirements below rather than selecting a vendor only because it serves the
+  same weights.
 - **Web search** is replaced, and works with no API key by default (see below).
 - **Account sign-in** is replaced by API keys for the providers above.
 
@@ -50,7 +68,7 @@ its job:
 From the packed tarball (the verified path):
 
 ```powershell
-dsh plugin --profile web add C:\path\to\dsh-egress-guard-0.1.8.tgz
+dsh plugin --profile web add C:\path\to\dsh-egress-guard-0.1.9.tgz
 ```
 
 From a git repository you control:
@@ -63,13 +81,13 @@ dsh plugin --profile web add https://github.com/NASCOUSA/dsh-egress-guard.git
 
 A file tarball installation is a copy, not a link. Editing this project folder
 does not update the package under `$DSH_HOME\profiles\<name>\node_modules`.
-Upgrade an existing 0.1.0 through 0.1.7 installation with a newly packed 0.1.8
+Upgrade an existing 0.1.0 through 0.1.8 installation with a newly packed 0.1.9
 tarball:
 
 ```powershell
 npm pack
 dsh plugin --profile web remove dsh-egress-guard
-dsh plugin --profile web add C:\path\to\dsh-egress-guard\dsh-egress-guard-0.1.8.tgz
+dsh plugin --profile web add C:\path\to\dsh-egress-guard\dsh-egress-guard-0.1.9.tgz
 pwsh -File scripts\verify-profile.ps1 -Profile web
 ```
 
@@ -159,13 +177,68 @@ in `$DSH_HOME/profiles/<name>/cordis.patch.yml`:
 ```yaml
 - id: agent-default-model
   config:
-    provider: <your provider id>       # e.g. deepinfra, openrouter, relace
-    model: <model id>
+    provider: <privacy-approved provider id>
+    model: <privacy-approved model id>
 ```
 
-Verified substitutes for DeepSeek weights: DeepInfra, Relace, and OpenRouter all
-serve `deepseek-ai/DeepSeek-V4.1-Flash`. Until this is set, the effect of the
-bundle is "no model", not "a private model".
+Several hosted providers can serve compatible model weights, but availability
+is not a privacy endorsement. Until a provider is set, the bundle's effect is
+"no model", not "a private model".
+
+## Model provider selection is part of the privacy boundary
+
+Installing this bundle closes the audited DeepSeek-operated routes. It cannot
+make a third-party inference provider private. The provider receiving the
+prompt is now the main privacy dependency, and the same applies to search
+queries, file uploads, tools, and any provider-side storage or background jobs.
+
+Prefer providers in this order:
+
+1. **Self-host the model on infrastructure you control.** Serve an open-weight
+   model locally or in your own private cloud. For an OpenAI-compatible local
+   endpoint, use a server such as [vLLM](https://docs.vllm.ai/en/stable/serving/online_serving/openai_compatible_server/)
+   or [Ollama in local-only mode](https://docs.ollama.com/faq). Bind the endpoint
+   to loopback/private networking, disable request logging and cloud features,
+   secure the reverse proxy, encrypt storage, and define log/backup deletion
+   rules. Self-hosting is only as private as the telemetry, logs, backups, and
+   outbound dependencies of that deployment.
+2. **Use a hosted provider with an enforceable ZDR mode.** Require prompt and
+   completion non-retention, no training, no human review except a narrowly
+   documented exception, explicit processing regions, and a list of
+   subprocessors. Set the provider's control in the organization/account; do
+   not rely only on a request body flag or marketing summary.
+3. **Do not treat "does not train" as sufficient.** A provider may still retain
+   content for abuse review, observability, prompt caching, batch APIs, support,
+   or legal compliance. Safety retention and training are separate decisions.
+
+Public provider policies to evaluate as of **2026-11-24**:
+
+| Provider path | Published claim or control | Required caveat |
+|---|---|---|
+| Relace API | [ZDR policy](https://relace.ai/old/legal/zero-data-retention-policy) says covered prompts and outputs are held only transiently and are not used for training. | Confirm the policy still covers the exact API product; metadata is retained. |
+| Together AI | [ZDR](https://docs.together.ai/docs/zero-data-retention) is enabled by default for new organizations when prompt storage is off; passthrough models are unavailable with that setting. | Verify the organization setting; uploaded files and account/request metadata remain governed separately. |
+| DeepInfra | [Data privacy](https://docs.deepinfra.com/account/data-privacy) says normal inference inputs and outputs are not stored to disk and are not trained on. | Google/Anthropic models and bulk/image workflows have stated exceptions; avoid them unless their separate terms are acceptable. |
+| OpenRouter with ZDR | [ZDR controls](https://openrouter.ai/docs/guides/features/zdr) restrict requests to eligible endpoints; endpoint policy can differ from provider default. | Enforce **ZDR Only**, review each endpoint, and do not assume web-search/plugins or other tools inherit model-route ZDR. |
+| Fireworks AI Enterprise | [Enterprise ZDR](https://docs.fireworks.ai/accounts/zero-data-retention) is account-wide and rejects supported features that persist content. | ZDR is an Enterprise feature; it does not cover third-party tools/search and has law/abuse exceptions. |
+| Amazon Bedrock | [Per-region data retention modes](https://docs.aws.amazon.com/bedrock/latest/userguide/data-retention.html) include `none`; requests requiring retention are blocked. | Configure every used Region/project and verify model eligibility; `store: false` alone is not enough. |
+| Microsoft Foundry models sold by Azure | [Data/privacy documentation](https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/openai/data-privacy) says prompts and completions are not used for training and Azure-hosted models do not call the original model provider. | Stateful features can persist data, and abuse monitoring/human-review exceptions require review. |
+
+These links are evidence to re-check, not a permanent approval list. Policies,
+models, subprocessor routes, and jurisdictions can change. Before production
+use, record the provider, endpoint/model, ZDR setting, region, contract/DPA,
+policy URL, verification date, and a test showing that the effective endpoint is
+the intended one.
+
+If the requirement is "no model prompt or response leaves systems I control,"
+the commercial choices above do not satisfy it. Run the model and its gateway
+locally/private, disable prompt logging and analytics, and keep search/tool
+execution on approved infrastructure too.
+
+The same warning applies to search: Tavily, Exa, Brave, and other hosted search
+providers receive search queries under their own policies. A self-hosted
+SearXNG removes a hosted search API from the path, but SearXNG's upstream search
+engines still receive queries unless it is configured with no external
+backends or only approved internal indexes.
 
 ## Verify
 
@@ -327,9 +400,12 @@ Run the verifier before and after an upgrade.
   single row here can be overridden without touching the package.
 - **Uploads that already happened are not recalled** by installing this, and a
   session-log upload watermark already accepted by the server is not revoked.
-- **DeepSeek model weights served by another vendor are not DeepSeek receiving
-  your data.** Unmounting the DeepSeek routes closes the path to DeepSeek itself;
-  it does not make the substitute vendor a non-party.
+- **DeepSeek model weights served by another vendor do not mean no third party
+  receives the prompt.** Unmounting the DeepSeek routes closes the audited path
+  to DeepSeek itself; the substitute vendor becomes the receiving party and must
+  meet the retention, training, region, subprocessor, and lawful-access
+  requirements for the deployment. A provider name or "open weights" label is
+  not a substitute for that review.
 
 ## License
 
