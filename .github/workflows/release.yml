@@ -1,0 +1,67 @@
+name: Publish release
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-release-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release tag
+        id: release
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            tag="${GITHUB_REF_NAME}"
+          else
+            version="$(node -p "require('./package.json').version")"
+            tag="v${version}"
+          fi
+
+          if ! git rev-parse "${tag}^{commit}" >/dev/null 2>&1; then
+            echo "Tag ${tag} does not exist; no release to publish."
+            echo "publish=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          if gh release view "${tag}" >/dev/null 2>&1; then
+            echo "Release ${tag} already exists; no action needed."
+            echo "publish=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+          echo "publish=true" >> "${GITHUB_OUTPUT}"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Build and publish
+        if: steps.release.outputs.publish == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${{ steps.release.outputs.tag }}"
+          git checkout --detach "${tag}"
+          tarball="$(npm pack --silent)"
+          gh release create "${tag}" "${tarball}" \
+            --verify-tag \
+            --generate-notes \
+            --title "DSH Egress Guard ${tag}" \
+            --latest
+        env:
+          GH_TOKEN: ${{ github.token }}
