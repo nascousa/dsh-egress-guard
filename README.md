@@ -16,7 +16,8 @@ updates, and public documentation links. It covers both the `web` and Electron
 dependency, reuses the resolved local SearXNG image, and verifies effective
 configuration plus DNS sinkholes.
 
-Version 0.1.7 completes the Dyson-sphere-inspired containment icon: a local
+Version 0.1.8 sanitizes public examples and completes the
+Dyson-sphere-inspired containment icon: a local
 data core is fully enclosed by a polygonal shell, without orbital rings or a
 status dot, and a larger shield badge reinforces the lower-right edge.
 
@@ -49,7 +50,7 @@ its job:
 From the packed tarball (the verified path):
 
 ```powershell
-dsh plugin --profile web add C:\path\to\dsh-egress-guard-0.1.7.tgz
+dsh plugin --profile web add C:\path\to\dsh-egress-guard-0.1.8.tgz
 ```
 
 From a git repository you control:
@@ -62,13 +63,13 @@ dsh plugin --profile web add https://github.com/NASCOUSA/dsh-egress-guard.git
 
 A file tarball installation is a copy, not a link. Editing this project folder
 does not update the package under `$DSH_HOME\profiles\<name>\node_modules`.
-Upgrade an existing 0.1.0 through 0.1.6 installation with a newly packed 0.1.7
+Upgrade an existing 0.1.0 through 0.1.7 installation with a newly packed 0.1.8
 tarball:
 
 ```powershell
 npm pack
 dsh plugin --profile web remove dsh-egress-guard
-dsh plugin --profile web add D:\Repos\ARKSOFT\DSH\dsh-egress-guard\dsh-egress-guard-0.1.7.tgz
+dsh plugin --profile web add C:\path\to\dsh-egress-guard\dsh-egress-guard-0.1.8.tgz
 pwsh -File scripts\verify-profile.ps1 -Profile web
 ```
 
@@ -78,7 +79,7 @@ pass its repository to the verifier:
 ```powershell
 pwsh -File scripts\verify-profile.ps1 `
   -Profile web `
-  -DshRepository C:\Users\devuser\deepseek-harness
+  -DshRepository C:\path\to\deepseek-harness
 ```
 
 Restart DSH after changing an installed bundle. Source-only script and
@@ -93,7 +94,7 @@ are retained. The verifier supports either profile:
 ```powershell
 pwsh -File scripts\verify-profile.ps1 `
   -Profile desktop `
-  -DshRepository C:\Users\devuser\deepseek-harness
+  -DshRepository C:\path\to\deepseek-harness
 ```
 
 ### Two install methods that break, and why

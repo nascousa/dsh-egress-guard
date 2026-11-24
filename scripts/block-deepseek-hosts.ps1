@@ -137,12 +137,12 @@ if ($SelfTest) {
     $fixture = [System.Collections.Generic.List[string]]::new()
     foreach ($line in @(
         '127.0.0.1 localhost',
-        '192.168.4.130 host.docker.internal',
+        '192.0.2.10 container-host.example.test',
         $beginMarker,
         '0.0.0.0 api.deepseek.com',
         $endMarker,
-        '100.112.216.121 dev8.tail43f152.ts.net. dev8',
-        '# TailscaleHostsSectionEnd'
+        '198.51.100.20 workstation.example.test',
+        '# ThirdPartyHostsSectionEnd'
     )) {
         $fixture.Add($line)
     }
@@ -168,7 +168,7 @@ if ($SelfTest) {
     )
     & $check 'strip keeps foreign lines before and after the block' (
         $stripped[0] -eq '127.0.0.1 localhost' -and
-        $stripped[$stripped.Count - 1] -eq '# TailscaleHostsSectionEnd'
+        $stripped[$stripped.Count - 1] -eq '# ThirdPartyHostsSectionEnd'
     )
 
     $malformedRejected = $false
