@@ -1,0 +1,24 @@
+name: Validate
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run PowerShell self-tests
+        shell: pwsh
+        run: |
+          ./scripts/block-deepseek-hosts.ps1 -SelfTest
+          ./scripts/setup-searxng.ps1 -SelfTest
+          ./scripts/verify-profile.ps1 -SelfTest
+
+      - name: Validate package
+        run: npm pack --dry-run

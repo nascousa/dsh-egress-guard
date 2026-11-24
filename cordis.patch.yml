@@ -1,0 +1,136 @@
+# dsh-egress-guard — one profile patch layer that removes the audited egress
+# paths a DSH profile has to DeepSeek infrastructure, and replaces the one
+# capability that lives there.
+#
+# Applied last among bundle layers, before the profile's own cordis.patch.yml,
+# so a profile can still override any single row below.
+#
+# Originally verified against @deepseek-ai/dsh-base/dsh-web-app
+# 0.2.1-alpha.3 and revalidated against 0.2.3-alpha.2. A later release that
+# renames or drops a targeted row id can change the protection boundary: run
+# scripts/verify-profile.ps1 after every DSH upgrade.
+
+# ---------------------------------------------------------------------------
+# Deliberately NOT patched: `agent-default-model`.
+# ---------------------------------------------------------------------------
+# A stock profile points that row at `provider: deepseek-official`, so unmounting
+# `llm-deepseek` above leaves the agent without a model until it is repointed.
+# This layer cannot repoint it for you: the substitute provider needs an API key
+# that only you have, and the bundle cannot guess a provider id or model id.
+# Set it after installing — Web GUI Settings -> Models, or in the profile's own
+# cordis.patch.yml:
+#
+#   - id: agent-default-model
+#     config:
+#       provider: deepinfra          # or openrouter, relace, ...
+#       model: deepseek-ai/DeepSeek-V4.1-Flash
+#
+# DeepInfra, Relace, and OpenRouter all serve these weights, so this costs no
+# capability. Until it is set, the bundle's effect is "no model" rather than "a
+# model from somewhere else".
+
+# ---------------------------------------------------------------------------
+# Upload channels. These send session content or telemetry and provide no
+# capability, so disabling them costs nothing.
+# ---------------------------------------------------------------------------
+
+# Attaches the `dsh_session_log` request field (up to `maxBytes`, default
+# 8 MiB, of canonical session events) plus the DSH session/user-id headers to
+# every official DeepSeek API request. `false` stops the upload entirely; the
+# plugin stays mounted but inert.
+- id: session-log-deepseek
+  config:
+    enabled: false
+
+# OTLP session telemetry. `DISABLED` constructs no coordinator, provider,
+# processor, or exporter, and reads neither `exporter` nor
+# `shutdownTimeoutMillis`, so replacing the whole config here leaves the
+# shipped collector URL unreachable. `FEEDBACK_ONLY` (the shipped default)
+# would still release a session-log prefix after explicit user feedback.
+- id: session-telemetry-otel
+  config:
+    mode: DISABLED
+
+# Contributes the `dsh_plugin_packages` field and its headers to official
+# requests. Purely descriptive of this installation; no capability depends on it.
+- id: plugin-package-inventory-deepseek
+  disabled: true
+
+# ---------------------------------------------------------------------------
+# DeepSeek-bound capability rows. Unmounting each one removes the only code path
+# that can address a DeepSeek origin. None of these costs a capability that has
+# no substitute:
+#   - DeepSeek model weights are served by non-DeepSeek providers too
+#     (DeepInfra, Relace, OpenRouter, ...), configured as llm-pi-ai providers.
+#   - Search is replaced below.
+#   - The account platform only serves a sign-in flow, which API keys replace.
+# The in-box `deepseek-llm-api-extensions` row stays mounted and is inert: it
+# only attaches headers and fields to requests made by the two adapters below.
+# ---------------------------------------------------------------------------
+
+# DeepSeek's own API-key model route.
+- id: llm-deepseek
+  disabled: true
+
+# DeepSeek account-backed model route.
+- id: llm-deepseek-account
+  disabled: true
+
+# Account platform: sign-in, token exchange, profile reads against
+# platform.deepseek.com. Sign out before installing this bundle if a grant is
+# stored, because an unmounted platform cannot drive the sign-out flow: the
+# sign-out delete happens locally before its revoke request, but the row has to
+# be mounted for the flow to run at all.
+- id: deepseek-account
+  disabled: true
+
+# Native web_search through DeepSeek's Anthropic-compatible Messages endpoint.
+# Disabled because it posts every query to api.deepseek.com.
+- id: web-search-deepseek
+  disabled: true
+
+# ---------------------------------------------------------------------------
+# A China-hosted npm mirror that ships as the plugin manager's fallback.
+# ---------------------------------------------------------------------------
+
+# `fallbackRegistries` defaults to [https://registry.npmmirror.com/], so an
+# install that cannot reach npmjs retries against a mirror in China with the
+# package metadata it was about to install. Emptying the list leaves npmjs as
+# the only registry asked. Installing plugins still works; a registry outage
+# now fails loudly instead of re-routing metadata abroad.
+- id: plugin-manager
+  config:
+    fallbackRegistries: []
+
+# ---------------------------------------------------------------------------
+# Search: the one real capability that lived on DeepSeek infrastructure.
+# ---------------------------------------------------------------------------
+
+# `dsh-web-search` is the provider id registered by dsh-web-search-plugin
+# (a dependency of this bundle, inserted below). Restating `fetchProvider` is
+# required because a patch replaces the whole config of its target row.
+- id: web
+  config:
+    searchProvider: dsh-web-search
+    fetchProvider: http
+
+# The replacement provider. `provider` selects the backend; the shipped default
+# inside that package is `deepseek-official`, which would send every query to
+# api.deepseek.com, so it must be set to a backend with no DeepSeek origin.
+#
+#   tavily     keyless (the plugin sends `x-tavily-access-mode: keyless`),
+#              no account, queries go to Tavily in the US
+#   searxng    no key; point `searxngBaseURL` at your own instance
+#              (scripts/setup-searxng.ps1) or a public one
+#   exa        needs `exaApiKey` or $EXA_API_KEY, US vendor
+#   brave      needs `braveApiKey` or $BRAVE_API_KEY, US vendor
+#   serper, serpapi, scavio, firecrawl   keyed vendors
+#
+# To self-host:
+#   provider: searxng
+#   searxngBaseURL: http://127.0.0.1:8888
+- insert:
+    - id: dsh-web-search-plugin
+      name: dsh-web-search-plugin
+      config:
+        provider: tavily
