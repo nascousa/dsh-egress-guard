@@ -16,9 +16,9 @@ updates, and public documentation links. It covers both the `web` and Electron
 dependency, reuses the resolved local SearXNG image, and verifies effective
 configuration plus DNS sinkholes.
 
-Version 0.1.5 completes the Dyson-sphere-inspired containment icon: a local
+Version 0.1.6 completes the Dyson-sphere-inspired containment icon: a local
 data core is fully enclosed by a polygonal shell, without orbital rings or a
-status dot, and every outward path terminates at the shell.
+status dot, and a small shield badge reinforces the lower-right edge.
 
 ## What it changes
 
@@ -49,7 +49,7 @@ its job:
 From the packed tarball (the verified path):
 
 ```powershell
-dsh plugin --profile web add C:\path\to\dsh-egress-guard-0.1.5.tgz
+dsh plugin --profile web add C:\path\to\dsh-egress-guard-0.1.6.tgz
 ```
 
 From a git repository you control:
@@ -62,13 +62,13 @@ dsh plugin --profile web add https://github.com/NASCOUSA/dsh-egress-guard.git
 
 A file tarball installation is a copy, not a link. Editing this project folder
 does not update the package under `$DSH_HOME\profiles\<name>\node_modules`.
-Upgrade an existing 0.1.0 through 0.1.4 installation with a newly packed 0.1.5
+Upgrade an existing 0.1.0 through 0.1.5 installation with a newly packed 0.1.6
 tarball:
 
 ```powershell
 npm pack
 dsh plugin --profile web remove dsh-egress-guard
-dsh plugin --profile web add D:\Repos\ARKSOFT\DSH\dsh-egress-guard\dsh-egress-guard-0.1.5.tgz
+dsh plugin --profile web add D:\Repos\ARKSOFT\DSH\dsh-egress-guard\dsh-egress-guard-0.1.6.tgz
 pwsh -File scripts\verify-profile.ps1 -Profile web
 ```
 
