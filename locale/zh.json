@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "DSH 出站防护",
+    "description": "阻断已审计的 DeepSeek 出站路径，并通过替代模型与搜索提供商保持 DSH 可用。"
+  }
+}

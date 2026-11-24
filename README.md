@@ -1,5 +1,7 @@
 # dsh-egress-guard
 
+![DSH Egress Guard icon](./assets/icon.png)
+
 A DSH **profile bundle** that removes the audited egress paths a profile has to
 DeepSeek infrastructure, and replaces the one capability that lives there.
 

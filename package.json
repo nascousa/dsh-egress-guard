@@ -4,6 +4,11 @@
   "description": "DSH profile bundle that removes audited DeepSeek-bound egress paths from a profile and replaces DeepSeek web search with a provider that has no DeepSeek origin.",
   "license": "MIT",
   "type": "module",
+  "author": {
+    "name": "NASCOUSA",
+    "url": "https://github.com/NASCOUSA"
+  },
+  "icon": "./assets/icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/NASCOUSA/dsh-egress-guard.git"
@@ -15,10 +20,13 @@
   "files": [
     "README.md",
     "cordis.patch.yml",
+    "assets",
+    "locale",
     "scripts"
   ],
   "engines": {
-    "node": "^22.19.0 || >=24.0.0"
+    "node": "^22.19.0 || >=24.0.0",
+    "dsh": ">=0.2.3-alpha.2 <0.3.0"
   },
   "keywords": [
     "dsh-plugin",
